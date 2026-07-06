@@ -1,6 +1,7 @@
 // おかいもの けいさんアプリ — オフライン用サービスワーカー
-const CACHE = 'kaimono-v3';
-const SNACKS = ['fusengum', 'ramune', 'osakana', 'fugashi', 'stick', 'choco', 'candy', 'cookie', 'donut', 'cake', 'gummy', 'ice', 'chips', 'pudding', 'macaron'];
+const CACHE = 'kaimono-v4';
+// osakana/fugashi は過去に積んだデータの表示用に残置キャッシュ
+const SNACKS = ['fusengum', 'ramune', 'doubutsu', 'osakana', 'fugashi', 'stick', 'choco', 'candy', 'cookie', 'donut', 'cake', 'gummy', 'ice', 'chips', 'pudding', 'macaron'];
 const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './icon-180.png']
   .concat(SNACKS.map((s) => './snacks/' + s + '.png'));
 self.addEventListener('install', (e) => {

@@ -169,6 +169,8 @@
     z-index: 10; position: relative;
     background-repeat: no-repeat; background-position: center bottom; background-size: contain;
     filter: drop-shadow(0 4px 3px rgba(150,100,200,0.25));
+    /* 横スワイプでけす（縦方向のスクロールはブラウザに任せて共存） */
+    touch-action: pan-y; cursor: grab;
   }
   .snack-amount {
     position: absolute; right: -8px; top: 50%; transform: translateY(-50%);
@@ -306,8 +308,9 @@
     -webkit-overflow-scrolling: touch; flex-shrink: 0;
   }
   .snack-palette.show { display: flex; }
+  /* ボタン幅は「◯.5個見え」になるよう計算（端が半分見える＝横にスライドできると分かる） */
   .snack-btn {
-    flex: 0 0 auto; width: 66px; border: 3px solid transparent; border-radius: 16px;
+    flex: 0 0 calc((100% - 40px) / 5.5); border: 3px solid transparent; border-radius: 16px;
     background: white; box-shadow: 0 4px 0 #f0d6ff; padding: 6px 2px 4px;
     cursor: pointer; text-align: center; transition: transform 0.1s;
   }
@@ -345,6 +348,8 @@
     /* パネル内はテンキーを上、履歴を下に（よく使うものから見える） */
     .controls-split { flex-direction: column-reverse; }
     .history-list { max-height: 150px; border-bottom: none; border-top: 3px dashed #e0b3ff; }
+    /* スマホは4.5個見え（5個目が半分見える） */
+    .snack-btn { flex-basis: calc((100% - 32px) / 4.5); }
   }
 
   /* ばくはつ後：ゆかに散らばったおかし */
@@ -447,13 +452,13 @@
   // ゆめかわパステル配色（アイテムの色）
   const colors = ["#c17ee0", "#7fb8ff", "#ff9bce", "#ffd36b", "#9be8b0", "#b06ad6", "#ff8fc0"];
 
-  // おかし15種（おかしモードで積むお菓子）。先頭5つは駄菓子屋シリーズ（2026-07-06追加）
+  // おかし14種（おかしモードで積むお菓子）。先頭4つは駄菓子屋シリーズ（2026-07-06追加）
+  // ※ふがしは不採用で除外（画像fugashi.pngは過去データの表示用に残置）
   const SNACKS = [
     { key: 'fusengum', name: 'ガム' },
     { key: 'ramune',   name: 'ラムネ' },
-    { key: 'osakana',  name: 'おさかな' },
-    { key: 'fugashi',  name: 'ふがし' },
-    { key: 'stick',    name: 'ぼうスナック' },
+    { key: 'doubutsu', name: 'どうぶつ' },
+    { key: 'stick',    name: 'うまいbar' },
     { key: 'choco',   name: 'チョコ' },
     { key: 'candy',   name: 'キャンディ' },
     { key: 'cookie',  name: 'クッキー' },
@@ -484,7 +489,7 @@
   const STORE_KEY = 'kaimono_calc_v1';
   function saveState() {
     try {
-      localStorage.setItem(STORE_KEY, JSON.stringify({ items, budget, mode, selectedSnack }));
+      localStorage.setItem(STORE_KEY, JSON.stringify({ items, budget, mode, selectedSnack, selectedSnackKey: SNACKS[selectedSnack].key }));
     } catch (e) { /* プライベートモード等では黙って無視 */ }
   }
   function loadState() {
@@ -495,7 +500,10 @@
       if (Array.isArray(data.items)) items = data.items;
       if (typeof data.budget === 'number' && data.budget > 0) budget = data.budget;
       if (data.mode === 'cup' || data.mode === 'blocks') mode = data.mode;
-      if (typeof data.selectedSnack === 'number' && data.selectedSnack >= 0 && data.selectedSnack < SNACKS.length) selectedSnack = data.selectedSnack;
+      // キー優先で復元（おかしの並び・数が変わっても選択が保たれる）。旧データは番号で復元
+      const byKey = data.selectedSnackKey ? SNACKS.findIndex(s => s.key === data.selectedSnackKey) : -1;
+      if (byKey >= 0) selectedSnack = byKey;
+      else if (typeof data.selectedSnack === 'number' && data.selectedSnack >= 0 && data.selectedSnack < SNACKS.length) selectedSnack = data.selectedSnack;
     } catch (e) { /* 壊れていたら無視 */ }
   }
   loadState();
@@ -805,6 +813,56 @@
     render();
   }
 
+  // 積み上げたおかしを横スワイプでけす（おかしモード）。
+  // touch-action: pan-y なので縦スクロールとは競合しない。パレットの横スライドとも別要素なので競合しない。
+  function attachSwipeDelete(el, id) {
+    let startX = 0, startY = 0, down = false, dragging = false, base = '';
+    el.addEventListener('pointerdown', (e) => {
+      down = true; dragging = false;
+      startX = e.clientX; startY = e.clientY;
+      base = el.style.transform || '';
+    });
+    el.addEventListener('pointermove', (e) => {
+      if (!down) return;
+      const dx = e.clientX - startX, dy = e.clientY - startY;
+      if (!dragging) {
+        if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+          dragging = true;
+          try { el.setPointerCapture(e.pointerId); } catch (err) {}
+          el.style.transition = 'none';
+          el.style.cursor = 'grabbing';
+        } else {
+          return;
+        }
+      }
+      el.style.transform = `translateX(${dx}px) ` + base;
+      el.style.opacity = String(Math.max(0.35, 1 - Math.abs(dx) / 260));
+    });
+    const finish = (e) => {
+      if (!down) return;
+      down = false;
+      if (!dragging) return;
+      dragging = false;
+      const dx = e.clientX - startX;
+      if (Math.abs(dx) > 70) {
+        // しきい値を超えたら、飛ばして消す
+        const dir = dx > 0 ? 1 : -1;
+        el.style.transition = 'transform 0.22s ease-in, opacity 0.22s ease-in';
+        el.style.transform = `translateX(${dir * 420}px) rotate(${dir * 35}deg) ` + base;
+        el.style.opacity = '0';
+        setTimeout(() => deleteItem(id), 210);
+      } else {
+        // 足りなければ元の位置へ戻す
+        el.style.transition = '';
+        el.style.transform = base;
+        el.style.opacity = '';
+        el.style.cursor = '';
+      }
+    };
+    el.addEventListener('pointerup', finish);
+    el.addEventListener('pointercancel', finish);
+  }
+
   function render() {
     const total = items.reduce((sum, item) => sum + item.amount, 0);
     totalLabel.innerText = total;
@@ -840,6 +898,7 @@
         label.className = 'snack-amount';
         label.innerText = item.amount;
         div.appendChild(label);
+        attachSwipeDelete(div, item.id);
         if (explodedView) {
           // ばくはつ後：ゆかに散らばったまま（位置はitem.idから固定）
           div.classList.add('scattered');
