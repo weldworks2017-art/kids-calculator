@@ -1,6 +1,8 @@
 // おかいもの けいさんアプリ — オフライン用サービスワーカー
-const CACHE = 'kaimono-v1';
-const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './icon-180.png'];
+const CACHE = 'kaimono-v2';
+const SNACKS = ['choco', 'candy', 'cookie', 'donut', 'cake', 'gummy', 'ice', 'chips', 'pudding', 'macaron'];
+const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './icon-180.png']
+  .concat(SNACKS.map((s) => './snacks/' + s + '.png'));
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
 });

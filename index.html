@@ -143,20 +143,20 @@
   .blocks {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column-reverse; align-items: center;
   }
-  /* おうちの壁と天井（パステル） */
+  /* よさんライン（ここまで積めるよの目印） */
   .blocks::before {
-    content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    border-left: 8px solid #e0b3ff; border-right: 8px solid #e0b3ff; border-top: 8px solid #e0b3ff;
-    pointer-events: none; z-index: 2; border-radius: 10px 10px 0 0;
+    content: 'ここまで'; position: absolute; top: -4px; left: -10px; width: calc(100% + 20px);
+    border-top: 4px dashed #ff9bce; color: #ff8fc0;
+    font-size: 0.85rem; font-weight: 900; text-align: right; padding-top: 4px;
+    pointer-events: none; z-index: 2;
   }
-  /* おうちの三角屋根（ピンク） */
+  /* お菓子をのせるおさら */
   .blocks::after {
-    content: ''; position: absolute; top: -36px; left: -14px;
-    width: calc(100% + 28px); height: 38px;
-    background: linear-gradient(135deg, #ff9bce, #ff6fb5);
-    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
-    pointer-events: none; z-index: 5;
-    filter: drop-shadow(0 4px 5px rgba(176,106,214,0.2));
+    content: ''; position: absolute; bottom: -14px; left: 50%; transform: translateX(-50%);
+    width: 175px; height: 22px;
+    background: linear-gradient(#ffffff, #e8d5ff);
+    border-radius: 50%; pointer-events: none; z-index: 5;
+    box-shadow: 0 5px 0 #d5b8f0, 0 8px 12px rgba(150,100,200,0.15);
   }
 
   .item-fill {
@@ -165,11 +165,17 @@
     color: white; font-weight: 900; font-size: 1.3rem; text-shadow: 0 2px 4px rgba(0,0,0,0.28);
   }
   .blocks .item-fill {
-    width: 80%; border-radius: 14px; margin-bottom: 6px;
-    box-shadow: 0 5px 0 rgba(0,0,0,0.12), inset 0 3px 0 rgba(255,255,255,0.5);
-    border: 3px solid rgba(255,255,255,0.5);
+    width: 86%; margin-bottom: 2px; min-height: 26px;
     z-index: 10; position: relative;
-    background-image: linear-gradient(to right, rgba(255,255,255,0.15) 0%, rgba(0,0,0,0.04) 50%, rgba(255,255,255,0.15) 100%);
+    background-repeat: no-repeat; background-position: center bottom; background-size: contain;
+    filter: drop-shadow(0 4px 3px rgba(150,100,200,0.25));
+  }
+  .snack-amount {
+    position: absolute; right: -8px; top: 50%; transform: translateY(-50%);
+    background: rgba(255,255,255,0.94); color: var(--purple-d);
+    border: 2px solid #f0d6ff; border-radius: 12px;
+    font-size: 0.85rem; font-weight: 900; padding: 1px 8px;
+    box-shadow: 0 2px 0 #f0d6ff; line-height: 1.4;
   }
 
   /* コップ用の液体とうねうね波 */
@@ -293,6 +299,44 @@
     letter-spacing: 2px; text-shadow: 0 1px 2px rgba(0,0,0,0.15);
   }
   .btn-add:active { box-shadow: 0 0px 0 #b06ad6; }
+
+  /* おかしパレット（おかしモードのときだけ表示） */
+  .snack-palette {
+    display: none; gap: 8px; padding: 12px 12px 6px; overflow-x: auto;
+    -webkit-overflow-scrolling: touch; flex-shrink: 0;
+  }
+  .snack-palette.show { display: flex; }
+  .snack-btn {
+    flex: 0 0 auto; width: 66px; border: 3px solid transparent; border-radius: 16px;
+    background: white; box-shadow: 0 4px 0 #f0d6ff; padding: 6px 2px 4px;
+    cursor: pointer; text-align: center; transition: transform 0.1s;
+  }
+  .snack-btn img { width: 40px; height: 40px; object-fit: contain; display: block; margin: 0 auto; }
+  .snack-btn span { display: block; font-size: 0.7rem; font-weight: 900; color: var(--purple-d); white-space: nowrap; }
+  .snack-btn.selected {
+    border-color: #ff8fc0; background: #fff0f8;
+    transform: translateY(2px); box-shadow: 0 2px 0 #e06fa8;
+  }
+
+  /* ばくはつ演出 */
+  .boom-flash {
+    position: absolute; top: 38%; left: 50%; font-size: 6rem; z-index: 120;
+    pointer-events: none; animation: boom-pop 0.9s ease-out forwards;
+  }
+  @keyframes boom-pop {
+    0%   { transform: translate(-50%, -50%) scale(0.2); opacity: 0; }
+    20%  { transform: translate(-50%, -50%) scale(1.4); opacity: 1; }
+    60%  { transform: translate(-50%, -50%) scale(1);   opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1.9); opacity: 0; }
+  }
+  .shake-hard { animation: shake-hard 0.5s ease-in-out; }
+  @keyframes shake-hard {
+    0%, 100% { transform: translate(0, 0); }
+    20% { transform: translate(-8px, 4px); }
+    40% { transform: translate(8px, -4px); }
+    60% { transform: translate(-6px, -3px); }
+    80% { transform: translate(6px, 3px); }
+  }
 </style>
 </head>
 <body>
@@ -305,7 +349,7 @@
   </div>
   <div class="mode-toggle">
     <button id="btnCup" class="active">コップ</button>
-    <button id="btnBlocks">つみき</button>
+    <button id="btnBlocks">おかし</button>
   </div>
 </div>
 
@@ -328,6 +372,7 @@
   </div>
 
   <div class="controls-area">
+    <div class="snack-palette" id="snackPalette"></div>
     <div class="input-display"><span id="currentInput">0</span> えん</div>
 
     <div class="controls-split">
@@ -364,6 +409,21 @@
   // ゆめかわパステル配色（アイテムの色）
   const colors = ["#c17ee0", "#7fb8ff", "#ff9bce", "#ffd36b", "#9be8b0", "#b06ad6", "#ff8fc0"];
 
+  // おかし10種（おかしモードで積むお菓子）
+  const SNACKS = [
+    { key: 'choco',   name: 'チョコ' },
+    { key: 'candy',   name: 'キャンディ' },
+    { key: 'cookie',  name: 'クッキー' },
+    { key: 'donut',   name: 'ドーナツ' },
+    { key: 'cake',    name: 'ケーキ' },
+    { key: 'gummy',   name: 'グミ' },
+    { key: 'ice',     name: 'アイス' },
+    { key: 'chips',   name: 'ポテチ' },
+    { key: 'pudding', name: 'プリン' },
+    { key: 'macaron', name: 'マカロン' },
+  ];
+  let selectedSnack = 0;
+
   // Elements
   const budgetInput = document.getElementById('budgetInput');
   const btnCup = document.getElementById('btnCup');
@@ -375,12 +435,13 @@
   const remainingLabel = document.getElementById('remainingLabel');
   const currentInputEl = document.getElementById('currentInput');
   const historyList = document.getElementById('historyList');
+  const snackPalette = document.getElementById('snackPalette');
 
   // ===== 自動保存（localStorage）：閉じても続きから使える =====
   const STORE_KEY = 'kaimono_calc_v1';
   function saveState() {
     try {
-      localStorage.setItem(STORE_KEY, JSON.stringify({ items, budget, mode }));
+      localStorage.setItem(STORE_KEY, JSON.stringify({ items, budget, mode, selectedSnack }));
     } catch (e) { /* プライベートモード等では黙って無視 */ }
   }
   function loadState() {
@@ -391,6 +452,7 @@
       if (Array.isArray(data.items)) items = data.items;
       if (typeof data.budget === 'number' && data.budget > 0) budget = data.budget;
       if (data.mode === 'cup' || data.mode === 'blocks') mode = data.mode;
+      if (typeof data.selectedSnack === 'number' && data.selectedSnack >= 0 && data.selectedSnack < SNACKS.length) selectedSnack = data.selectedSnack;
     } catch (e) { /* 壊れていたら無視 */ }
   }
   loadState();
@@ -408,6 +470,29 @@
   budgetInput.value = budget;
   if (mode === 'blocks') { btnBlocks.classList.add('active'); btnCup.classList.remove('active'); }
   else { btnCup.classList.add('active'); btnBlocks.classList.remove('active'); }
+
+  // おかしパレットを組み立て（10種から選ぶ→えらんだお菓子が積まれる）
+  SNACKS.forEach((s, i) => {
+    const b = document.createElement('button');
+    b.className = 'snack-btn';
+    b.innerHTML = `<img src="snacks/${s.key}.png" alt="${s.name}"><span>${s.name}</span>`;
+    b.addEventListener('click', () => {
+      selectedSnack = i;
+      updatePalette();
+      initAudio();
+      playSound('add-blocks');
+      saveState();
+    });
+    snackPalette.appendChild(b);
+  });
+  function updatePalette() {
+    [...snackPalette.children].forEach((el, i) => el.classList.toggle('selected', i === selectedSnack));
+  }
+  updatePalette();
+
+  function snackKeyOf(item, idx) {
+    return item.snack || SNACKS[idx % SNACKS.length].key;
+  }
 
   // Audio Context (Initialize on first touch to bypass autoplay restrictions)
   let audioCtx = null;
@@ -454,6 +539,30 @@
       gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
       gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
       osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+    } else if (type === 'boom') {
+      // ばくはつ音（ノイズバースト＋低音の落下）
+      const bufferSize = Math.floor(audioCtx.sampleRate * 0.4);
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) { data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2); }
+      const noise = audioCtx.createBufferSource(); noise.buffer = buffer;
+      const filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(1200, audioCtx.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.35);
+      const g = audioCtx.createGain();
+      g.gain.setValueAtTime(0.5, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+      noise.connect(filter); filter.connect(g); g.connect(audioCtx.destination);
+      noise.start();
+      const osc = audioCtx.createOscillator();
+      const og = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(160, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.35);
+      og.gain.setValueAtTime(0.4, audioCtx.currentTime);
+      og.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+      osc.connect(og); og.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.4);
     } else if (type === 'error') {
       const osc = audioCtx.createOscillator();
       const gainNode = audioCtx.createGain();
@@ -523,6 +632,35 @@
     }
   }
 
+  // よさんオーバーでお菓子タワーがばくはつする演出（おかしモード）
+  function explodeSnacks() {
+    const wrapper = visualContainer.querySelector('.blocks');
+    if (!wrapper) return;
+    playSound('boom');
+    // 💥フラッシュ
+    const boom = document.createElement('div');
+    boom.className = 'boom-flash';
+    boom.innerText = '💥';
+    visualContainer.appendChild(boom);
+    setTimeout(() => boom.remove(), 900);
+    // 画面ゆれ
+    visualContainer.classList.add('shake-hard');
+    setTimeout(() => visualContainer.classList.remove('shake-hard'), 600);
+    // お菓子が四方八方に吹き飛ぶ
+    wrapper.querySelectorAll('.item-fill').forEach(el => {
+      const dx = (Math.random() - 0.5) * 520;
+      const dy = -(80 + Math.random() * 360);
+      const rot = (Math.random() - 0.5) * 720;
+      el.animate([
+        { transform: 'translate(0, 0) rotate(0deg)', opacity: 1 },
+        { transform: `translate(${dx}px, ${dy}px) rotate(${rot}deg)`, opacity: 0 }
+      ], { duration: 700 + Math.random() * 300, easing: 'cubic-bezier(0.2, 0.6, 0.4, 1)', fill: 'forwards' });
+    });
+    createParticles(100, 200, 20, true);
+    // ばくはつが終わったら積み直して見せる（けす操作ができるように）
+    setTimeout(() => render(), 1100);
+  }
+
   // Events
   budgetInput.addEventListener('change', (e) => {
     budget = parseInt(e.target.value) || 300;
@@ -569,14 +707,15 @@
   function addItem() {
     const val = parseInt(currentVal);
     if (val > 0) {
-      items.push({ id: Date.now(), amount: val, color: colors[items.length % colors.length] });
+      items.push({ id: Date.now(), amount: val, color: colors[items.length % colors.length], snack: SNACKS[selectedSnack].key });
       currentVal = "0";
       updateInputDisplay();
       const total = items.reduce((sum, item) => sum + item.amount, 0);
       setTimeout(() => {
         if (total > budget) {
+          if (mode === 'blocks') { explodeSnacks(); return; }
           playSound('error');
-          createParticles(100, 10, 16, mode === 'blocks');
+          createParticles(100, 10, 16, false);
         } else {
           playSound(mode === 'cup' ? 'add-cup' : 'add-blocks');
           if (mode === 'cup') { createBubblesInCup(); }
@@ -615,13 +754,23 @@
     if (total > budget) { cautionLabel.style.display = 'block'; }
     else { cautionLabel.style.display = 'none'; }
 
-    items.forEach(item => {
+    snackPalette.classList.toggle('show', mode === 'blocks');
+
+    items.forEach((item, idx) => {
       const pct = (item.amount / budget) * 100;
       const div = document.createElement('div');
       div.className = 'item-fill';
       div.style.height = pct + '%';
-      div.style.backgroundColor = item.color;
-      if (pct > 8) { div.innerText = item.amount; }
+      if (mode === 'blocks') {
+        div.style.backgroundImage = "url('snacks/" + snackKeyOf(item, idx) + ".png')";
+        const label = document.createElement('span');
+        label.className = 'snack-amount';
+        label.innerText = item.amount;
+        div.appendChild(label);
+      } else {
+        div.style.backgroundColor = item.color;
+        if (pct > 8) { div.innerText = item.amount; }
+      }
       wrapper.appendChild(div);
     });
     visualContainer.appendChild(wrapper);
@@ -639,10 +788,15 @@
     items.slice().reverse().forEach(item => {
       const el = document.createElement('div');
       el.className = 'history-item';
+      const s = item.snack ? SNACKS.find(x => x.key === item.snack) : null;
+      const iconHtml = s
+        ? `<img src="snacks/${s.key}.png" alt="" style="width:30px;height:30px;object-fit:contain;margin-right:10px">`
+        : `<span class="color-dot" style="background:${item.color}"></span>`;
+      const nameHtml = s ? `<span style="font-size:0.95rem;margin-right:8px">${s.name}</span>` : '';
       el.innerHTML = `
         <div style="display:flex; align-items:center;">
-          <span class="color-dot" style="background:${item.color}"></span>
-          ${item.amount} えん
+          ${iconHtml}
+          ${nameHtml}${item.amount} えん
         </div>
         <button class="btn-delete" onclick="deleteItem(${item.id})">けす</button>
       `;
