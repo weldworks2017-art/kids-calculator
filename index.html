@@ -312,10 +312,44 @@
     cursor: pointer; text-align: center; transition: transform 0.1s;
   }
   .snack-btn img { width: 40px; height: 40px; object-fit: contain; display: block; margin: 0 auto; }
-  .snack-btn span { display: block; font-size: 0.7rem; font-weight: 900; color: var(--purple-d); white-space: nowrap; }
+  .snack-btn span { display: block; font-size: 0.62rem; font-weight: 900; color: var(--purple-d); white-space: nowrap; }
   .snack-btn.selected {
     border-color: #ff8fc0; background: #fff0f8;
     transform: translateY(2px); box-shadow: 0 2px 0 #e06fa8;
+  }
+
+  /* 電卓トグルボタン（スマホのみ）：右上の🧮でテンキーを呼び出す */
+  .calc-fab {
+    display: none;
+    position: fixed; top: calc(10px + env(safe-area-inset-top, 0px)); right: 10px; z-index: 300;
+    width: 60px; height: 60px; border-radius: 50%; border: 4px solid white;
+    font-size: 1.65rem; line-height: 1; cursor: pointer; color: white;
+    background: linear-gradient(160deg, #ff9bce, #c17ee0);
+    box-shadow: 0 5px 0 #b06ad6, 0 8px 16px rgba(150,100,200,0.35);
+    transition: transform 0.1s;
+  }
+  .calc-fab:active { transform: translateY(4px); box-shadow: 0 1px 0 #b06ad6; }
+  @media (max-width: 767px) {
+    .calc-fab { display: block; }
+    /* テンキー一式を下からせり上がるパネルにして、上下スクロールを不要に */
+    .controls-area {
+      position: fixed; left: 8px; right: 8px;
+      bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+      z-index: 250; border-radius: 28px;
+      max-height: 76vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      box-shadow: 0 0 0 4px #f0d6ff, 0 14px 34px rgba(80,40,120,0.35);
+      transform: translateY(calc(100% + 40px));
+      transition: transform 0.28s ease;
+    }
+    .controls-area.open { transform: translateY(0); }
+    /* パネル内はテンキーを上、履歴を下に（よく使うものから見える） */
+    .controls-split { flex-direction: column-reverse; }
+    .history-list { max-height: 150px; border-bottom: none; border-top: 3px dashed #e0b3ff; }
+  }
+
+  /* ばくはつ後：ゆかに散らばったおかし */
+  .blocks .item-fill.scattered {
+    position: absolute; width: 60%; margin: 0; min-height: 26px;
   }
 
   /* ばくはつ演出 */
@@ -352,6 +386,8 @@
     <button id="btnBlocks">おかし</button>
   </div>
 </div>
+
+<button id="calcFab" class="calc-fab" aria-label="でんたくをひらく">🧮</button>
 
 <div class="content">
   <div class="visual-area">
@@ -405,12 +441,19 @@
   let currentVal = "0";
   let mode = "cup"; // "cup" or "blocks"
   let budget = 300;
+  let exploded = false;      // おかしモードでばくはつ済み（散らばったまま表示する）
+  let justExploded = false;  // ばくはつ直後の1回だけ、落下アニメーションを付ける
 
   // ゆめかわパステル配色（アイテムの色）
   const colors = ["#c17ee0", "#7fb8ff", "#ff9bce", "#ffd36b", "#9be8b0", "#b06ad6", "#ff8fc0"];
 
-  // おかし10種（おかしモードで積むお菓子）
+  // おかし15種（おかしモードで積むお菓子）。先頭5つは駄菓子屋シリーズ（2026-07-06追加）
   const SNACKS = [
+    { key: 'fusengum', name: 'ガム' },
+    { key: 'ramune',   name: 'ラムネ' },
+    { key: 'osakana',  name: 'おさかな' },
+    { key: 'fugashi',  name: 'ふがし' },
+    { key: 'stick',    name: 'ぼうスナック' },
     { key: 'choco',   name: 'チョコ' },
     { key: 'candy',   name: 'キャンディ' },
     { key: 'cookie',  name: 'クッキー' },
@@ -470,6 +513,8 @@
   budgetInput.value = budget;
   if (mode === 'blocks') { btnBlocks.classList.add('active'); btnCup.classList.remove('active'); }
   else { btnCup.classList.add('active'); btnBlocks.classList.remove('active'); }
+  // 復元時にすでにオーバーしていたら、ばくはつ後の散らばり表示から始める
+  exploded = items.reduce((sum, item) => sum + item.amount, 0) > budget;
 
   // おかしパレットを組み立て（10種から選ぶ→えらんだお菓子が積まれる）
   SNACKS.forEach((s, i) => {
@@ -657,16 +702,40 @@
       ], { duration: 700 + Math.random() * 300, easing: 'cubic-bezier(0.2, 0.6, 0.4, 1)', fill: 'forwards' });
     });
     createParticles(100, 200, 20, true);
-    // ばくはつが終わったら積み直して見せる（けす操作ができるように）
-    setTimeout(() => render(), 1100);
+    // ばくはつしたまま：おかしがゆかに散らばった状態で残す（けす操作はそのまま可能）
+    setTimeout(() => { exploded = true; justExploded = true; render(); }, 900);
+  }
+
+  // item.id から毎回同じ散らばり位置を作る（再描画してもおかしが動かない）
+  function seededRand(seed, salt) {
+    const x = Math.sin((seed % 100000) * 12.9898 + salt * 78.233) * 43758.5453;
+    return x - Math.floor(x);
   }
 
   // Events
   budgetInput.addEventListener('change', (e) => {
     budget = parseInt(e.target.value) || 300;
     saveState();
-    render();
+    const total = items.reduce((sum, item) => sum + item.amount, 0);
+    if (mode === 'blocks' && total > budget && !exploded) {
+      // よさんを下げてオーバーになった時もばくはつ
+      render();
+      setTimeout(() => explodeSnacks(), 60);
+    } else {
+      render();
+    }
   });
+
+  // 電卓トグル（スマホ）：🧮でテンキーパネルを開閉
+  const calcFab = document.getElementById('calcFab');
+  const controlsArea = document.querySelector('.controls-area');
+  let calcOpen = false;
+  function setCalcOpen(v) {
+    calcOpen = v;
+    controlsArea.classList.toggle('open', v);
+    calcFab.innerText = v ? '✕' : '🧮';
+  }
+  calcFab.addEventListener('click', () => { initAudio(); setCalcOpen(!calcOpen); });
 
   btnCup.addEventListener('click', () => { mode = 'cup'; btnCup.classList.add('active'); btnBlocks.classList.remove('active'); saveState(); render(); });
   btnBlocks.addEventListener('click', () => { mode = 'blocks'; btnBlocks.classList.add('active'); btnCup.classList.remove('active'); saveState(); render(); });
@@ -724,6 +793,8 @@
       }, 50);
       saveState();
       render();
+      // スマホでは「ついか」したらパネルを閉じて、積み上がり／ばくはつがすぐ見えるように
+      if (window.matchMedia('(max-width: 767px)').matches) { setCalcOpen(false); }
     }
   }
 
@@ -737,6 +808,7 @@
   function render() {
     const total = items.reduce((sum, item) => sum + item.amount, 0);
     totalLabel.innerText = total;
+    if (total <= budget) { exploded = false; }  // よさん内に戻ったら積み直す
 
     if (total <= budget) {
       remainingLabel.innerText = "あと " + (budget - total) + " えん つかえるよ✨";
@@ -756,6 +828,7 @@
 
     snackPalette.classList.toggle('show', mode === 'blocks');
 
+    const explodedView = (mode === 'blocks' && total > budget && exploded);
     items.forEach((item, idx) => {
       const pct = (item.amount / budget) * 100;
       const div = document.createElement('div');
@@ -767,6 +840,14 @@
         label.className = 'snack-amount';
         label.innerText = item.amount;
         div.appendChild(label);
+        if (explodedView) {
+          // ばくはつ後：ゆかに散らばったまま（位置はitem.idから固定）
+          div.classList.add('scattered');
+          div.style.height = Math.min(pct, 36) + '%';
+          div.style.left = Math.round(-25 + seededRand(item.id, 1) * 185) + 'px';
+          div.style.bottom = Math.round(seededRand(item.id, 2) * 62) + 'px';
+          div.style.transform = 'rotate(' + Math.round(-80 + seededRand(item.id, 3) * 160) + 'deg)';
+        }
       } else {
         div.style.backgroundColor = item.color;
         if (pct > 8) { div.innerText = item.amount; }
@@ -774,6 +855,18 @@
       wrapper.appendChild(div);
     });
     visualContainer.appendChild(wrapper);
+
+    // ばくはつ直後だけ、散らばり位置へ降ってくるアニメーション
+    if (explodedView && justExploded) {
+      justExploded = false;
+      wrapper.querySelectorAll('.item-fill').forEach(el => {
+        const resting = el.style.transform || 'none';
+        el.animate([
+          { transform: 'translateY(-320px) rotate(0deg)', opacity: 0 },
+          { transform: resting, opacity: 1 }
+        ], { duration: 450 + Math.random() * 350, easing: 'cubic-bezier(0.3, 0.7, 0.4, 1.1)' });
+      });
+    }
 
     coinsDisplay.innerHTML = '';
     let remaining = total;
